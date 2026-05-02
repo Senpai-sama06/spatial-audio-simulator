@@ -18,6 +18,7 @@ def create_sample_config(audio_1, audio_2):
         "run_id": "test_run_001",
         "master_seed": 42,
         "sample_rate": 22050,  # LJSpeech is 22050
+        "duration_seconds": 10.0,
         "environment": {
             "type": "closed_room",
             "dimensions": [5.0, 4.0, 3.0],
@@ -51,7 +52,8 @@ def create_sample_config(audio_1, audio_2):
         "mixing_parameters": {
             "sir_target_db": 5.0,
             "snr_target_db": 20.0
-        }
+        },
+        "export_loose_files": True
     }
 
 if __name__ == "__main__":

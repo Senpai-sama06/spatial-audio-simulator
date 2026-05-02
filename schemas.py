@@ -53,8 +53,10 @@ class SceneConfigSchema(BaseModel):
     run_id: str
     master_seed: int
     sample_rate: int
+    duration_seconds: float = Field(..., description="Target duration of the output audio in seconds")
     environment: EnvironmentSchema
     microphone_array: MicrophoneArraySchema
     sources: List[SourceSchema]
     mixing_parameters: MixingParametersSchema
+    export_loose_files: bool = Field(False, description="If True, exports stems, mix, noise and RIRs as loose files in addition to HDF5")
     validation: Optional[ValidationSchema] = None

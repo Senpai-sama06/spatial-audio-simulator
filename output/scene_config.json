@@ -2,6 +2,7 @@
   "run_id": "test_run_001",
   "master_seed": 42,
   "sample_rate": 22050,
+  "duration_seconds": 10.0,
   "environment": {
     "type": "closed_room",
     "dimensions": [
@@ -66,5 +67,6 @@
   "mixing_parameters": {
     "sir_target_db": 5.0,
     "snr_target_db": 20.0
-  }
+  },
+  "export_loose_files": true
 }

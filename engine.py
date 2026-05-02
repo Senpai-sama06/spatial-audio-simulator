@@ -5,6 +5,7 @@ import numpy as np
 import h5py
 import pyroomacoustics as pra
 from scipy.signal import fftconvolve
+import soundfile as sf
 
 from state import MasterState
 from schemas import SceneConfigSchema, ValidationSchema
@@ -32,23 +33,38 @@ class RenderEngine:
         self.source_signals = {}
         
     def load_audio(self):
-        """Loads audio and forces float64 processing."""
-        import soundfile as sf
-        min_len = float('inf')
+        """Loads audio, forces float64, and handles duration (trimming or looping with 1s silence)."""
+        target_samples = int(self.config.duration_seconds * self.config.sample_rate)
+        silence_samples = int(self.config.sample_rate) # 1 second delay
+        
         for src in self.config.sources:
-            # We assume audio is already matching sample_rate, or we'd resample
             y, sr = sf.read(src.audio_path, dtype='float64')
             if sr != self.config.sample_rate:
                 raise ValueError(f"Sample rate mismatch for {src.audio_path}")
             if len(y.shape) > 1:
                 y = y[:, 0] # mono only
-            self.source_signals[src.source_id] = y
-            min_len = min(min_len, len(y))
             
-        # Truncate to minimum length
-        self.total_samples = min_len
-        for k in self.source_signals.keys():
-            self.source_signals[k] = self.source_signals[k][:self.total_samples]
+            if len(y) < target_samples:
+                # Loop with 1s silence
+                print(f"[ENGINE] Source {src.source_id} is shorter than target ({len(y)} < {target_samples}). Looping...")
+                silence = np.zeros(silence_samples, dtype='float64')
+                repeated = []
+                current_len = 0
+                while current_len < target_samples:
+                    repeated.append(y)
+                    current_len += len(y)
+                    if current_len >= target_samples:
+                        break
+                    repeated.append(silence)
+                    current_len += len(silence)
+                y = np.concatenate(repeated)[:target_samples]
+            else:
+                # Trim
+                y = y[:target_samples]
+            
+            self.source_signals[src.source_id] = y
+            
+        self.total_samples = target_samples
             
     def setup_environment(self):
         """Sets up Pyroomacoustics room and RIR calculation."""
@@ -196,7 +212,40 @@ class RenderEngine:
                 for s in range(n_sources):
                     rir_grp.create_dataset(f"mic_{m}_src_{s}", data=self.room.rir[m][s], compression="gzip")
                     
-        print("[ENGINE] Render Complete.")
+        print("[ENGINE] HDF5 Export Complete.")
+
+    def export_to_loose_files(self):
+        """Exports stems, mix, noise, RIRs and room image as loose files."""
+        loose_dir = os.path.join(self.output_dir, f"loose_files_{self.config.run_id}")
+        os.makedirs(loose_dir, exist_ok=True)
+        
+        print(f"[ENGINE] Exporting loose files to: {loose_dir}")
+        
+        # Save Mixture (Transpose to [samples, channels] for soundfile)
+        sf.write(os.path.join(loose_dir, "mixture.wav"), self.mix.T, self.config.sample_rate)
+        
+        # Save Noise
+        sf.write(os.path.join(loose_dir, "microphone_noise.wav"), self.noise.T, self.config.sample_rate)
+        
+        # Save Stems
+        for i, (src_id, stem_data) in enumerate(self.stems.items(), 1):
+            sf.write(os.path.join(loose_dir, f"source{i}_{src_id}.wav"), stem_data.T, self.config.sample_rate)
+            
+        # Save RIRs as .npy (using object array to handle variable RIR lengths)
+        rir_data = np.array(self.room.rir, dtype=object)
+        np.save(os.path.join(loose_dir, "rir_matrix.npy"), rir_data)
+
+        # Save Room Image
+        try:
+            import matplotlib.pyplot as plt
+            fig, ax = self.room.plot()
+            plt.savefig(os.path.join(loose_dir, "room_dimensionality.png"))
+            plt.close(fig)
+            print(f"  Saved room visualization to {loose_dir}/room_dimensionality.png")
+        except ImportError:
+            print("  Warning: matplotlib not found. Room image skipped.")
+        except Exception as e:
+            print(f"  Warning: Could not plot room: {e}")
 
     def run(self):
         self.load_audio()
@@ -205,3 +254,5 @@ class RenderEngine:
         self.apply_mixing_and_noise()
         passed = self.validate_phase_null()
         self.export_to_hdf5(passed)
+        if self.config.export_loose_files:
+            self.export_to_loose_files()

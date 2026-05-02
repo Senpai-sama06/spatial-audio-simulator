@@ -23,26 +23,33 @@ Unlike real-time audio engines that prioritize speed, this system **sacrifices e
 
 ## 3. Installation & Setup
 
-Ensure you have access to the specified Python virtual environment:
+This project is packaged as a standard Python library. You can install it in editable mode on any system:
 
 ```bash
-source /home/rpzrm/enigma/bin/activate
+# Clone the repository
+git clone <repo-url>
+cd spatial-audio-simulator
+
+# Install in editable mode
+pip install -e .
 ```
 
-The pipeline requires the following dependencies (already installed in the environment):
+The pipeline requires the following dependencies (handled automatically by `setup.py`):
 *   `numpy` (Numerical processing)
 *   `pyroomacoustics` (Acoustic simulation)
 *   `pydantic` (Data schema validation)
 *   `h5py` (Data containerization)
 *   `scipy` (DSP utilities)
 *   `psutil` (Hardware monitoring)
+*   `matplotlib` (Optional: for room visualization)
+*   `soundfile` (WAV I/O)
 
 ---
 
 ## 4. Usage
 
 ### Running a Test Simulation
-To run a complete end-to-end rendering test with sample audio data:
+To run a complete end-to-end rendering test:
 
 ```bash
 python run_pipeline.py
@@ -54,12 +61,14 @@ The pipeline is driven by `SceneConfigSchema` (see `schemas.py`). A typical `sce
 *   **Microphone Array:** Number of mics and their theoretical 3D coordinates.
 *   **Sources:** Source roles (target/interference), shapes (point/spherical), and audio paths.
 *   **Mixing Parameters:** Target Signal-to-Interference Ratio (SIR) and Signal-to-Noise Ratio (SNR).
+*   **Export Loose Files:** A flag `export_loose_files: true` will save individual WAVs, RIRs, and room images in addition to the HDF5 container.
 
 ### Outputs
 Upon a successful run, the engine generates an `output/` directory containing:
 1.  `run_[run_id].h5`: The master data container.
 2.  `scene_config.json`: The metadata payload used for the run.
-3.  `changelog.txt`: A history of architectural changes and reasoning.
+3.  `loose_files_[run_id]/`: (Optional) Individual WAVs, `rir_matrix.npy`, and `room_dimensionality.png`.
+4.  `changelog.txt`: A history of architectural changes and reasoning.
 
 ---
 
