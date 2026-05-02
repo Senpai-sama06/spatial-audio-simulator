@@ -1,0 +1,70 @@
+{
+  "run_id": "test_run_001",
+  "master_seed": 42,
+  "sample_rate": 22050,
+  "environment": {
+    "type": "closed_room",
+    "dimensions": [
+      5.0,
+      4.0,
+      3.0
+    ],
+    "rt60_target": 0.3,
+    "speed_of_sound_m_s": 343.0
+  },
+  "microphone_array": {
+    "num_mics": 2,
+    "locations": [
+      [
+        2.5,
+        2.0,
+        1.5
+      ],
+      [
+        2.6,
+        2.0,
+        1.5
+      ]
+    ]
+  },
+  "sources": [
+    {
+      "source_id": "target_1",
+      "role": "target",
+      "shape": "point",
+      "radius_m": null,
+      "kinematics": "static",
+      "trajectory_matrix": [
+        [
+          0.0,
+          1.0,
+          1.0,
+          1.5,
+          0.0
+        ]
+      ],
+      "audio_path": "/home/rpzrm/.cache/kagglehub/datasets/mathurinache/the-lj-speech-dataset/versions/1/LJSpeech-1.1/wavs/LJ047-0101.wav"
+    },
+    {
+      "source_id": "interference_1",
+      "role": "interference",
+      "shape": "point",
+      "radius_m": null,
+      "kinematics": "static",
+      "trajectory_matrix": [
+        [
+          0.0,
+          4.0,
+          3.0,
+          1.5,
+          0.0
+        ]
+      ],
+      "audio_path": "/home/rpzrm/.cache/kagglehub/datasets/mathurinache/the-lj-speech-dataset/versions/1/LJSpeech-1.1/wavs/LJ037-0082.wav"
+    }
+  ],
+  "mixing_parameters": {
+    "sir_target_db": 5.0,
+    "snr_target_db": 20.0
+  }
+}
